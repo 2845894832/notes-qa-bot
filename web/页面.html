@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>问笔记</title>
+<style>
+  body { font-family: system-ui, sans-serif; max-width: 640px; margin: 40px auto; padding: 0 16px; }
+  h1 { font-size: 20px; }
+  input { width: 68%; padding: 8px; font-size: 16px; }
+  button { padding: 8px 16px; font-size: 16px; }
+  pre { background: #f4f4f4; padding: 12px; white-space: pre-wrap; min-height: 60px; }
+</style>
+</head>
+<body>
+  <h1>问笔记</h1>
+  <input id="问题框" placeholder="想问什么…">
+  <button id="问按钮">问</button>
+  <pre id="答案区"></pre>
+
+<script>
+  // ─────────────────────────────────────────────────────────────
+  // 给学过 Python、没写过 JS 的人看的一张对照表：
+  //
+  //     Python                    JS
+  //     ─────────────────────     ─────────────────────────
+  //     "字符串"                   "字符串"            （一样）
+  //     变量直接写                 变量前面要加 const
+  //     requests.post(...)        fetch(...)         （同一件事）
+  //     json.dumps(...)           JSON.stringify(...)（同一件事）
+  //     json.loads(...)           .json()            （同一件事）
+  //     d["答案"]                 d.答案              （都是取那一栏）
+  //     try / except              if (响应.ok === false)（都得先看牌子）
+  // ─────────────────────────────────────────────────────────────
+
+  // 先把页面上三样东西抓过来（各有 id，按名字认）
+  const 问题框 = document.getElementById("问题框");
+  const 问按钮 = document.getElementById("问按钮");
+  const 答案区 = document.getElementById("答案区");
+
+  // 点「问」按钮时干这些事。
+  // async / await 理解成「等它回来」：发请求要花时间，await = 在这一行等。
+  问按钮.onclick = async () => {
+    答案区.textContent = "想…";
+
+    // ① 把问题发给 /问 这个柜台
+    const 响应 = await fetch("/问", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ 问题: 问题框.value }),   // .value 才是框里打的字
+    });
+
+    // ② 先看门口那块牌子，再看内容。
+    //    响应.ok：成功 true，出事 false。
+    //    出错的单子长这样 {"detail": "..."} —— 那串字就是服务端 raise 时写的原话
+    //    （注意：门卫拦下的 422，detail 是一**摞**纸条，不是一个字符串）
+    if (响应.ok === false) {
+      答案区.textContent = "出事了：" + (await 响应.json()).detail;
+      return;                                        // 出事了就别再往下掏「答案」
+    }
+
+    // ③ 把回答掏出来，显示到页面上
+    const 数据 = await 响应.json();
+    答案区.textContent = 数据.答案;
+
+  };
+</script>
+</body>
+</html>

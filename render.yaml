@@ -1,0 +1,24 @@
+# 给 Render 看的一张"说明书"：这个仓库该怎么跑起来。
+#
+# 有了它，平台上点「New → Blueprint」自动就填好了建/启动命令，
+# 不用手打（手打最容易在中文模块名上打错）。
+#
+# 三个地方值得看一眼：
+#   buildCommand  = 建的时候装依赖（就是上面那份 requirements.txt）
+#   startCommand  = 开张命令
+#                   0.0.0.0 —— 127.0.0.1 是"只接我这台机器"的敲门，
+#                             0.0.0.0 是"哪扇门来的都接"，服务器上必须这样
+#                   $PORT   —— 平台塞给你的门牌号，不能写死 8000
+#   envVars       —— DEEPSEEK_API_KEY 走这里，
+#                    sync: false = "值不在代码里，去平台网页上自己填"
+
+services:
+  - type: web
+    name: notes-qa-bot
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn web.服务:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: DEEPSEEK_API_KEY
+        sync: false
