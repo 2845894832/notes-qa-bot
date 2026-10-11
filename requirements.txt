@@ -1,0 +1,19 @@
+# 这个项目跑起来需要的第三方库。
+#
+# 为什么要有这个文件：
+#   你在本机是"想起了就 pip install 一个"，装了半年攒了一堆。
+#   服务器是**一台干干净净的新机器** —— 它不知道你要装什么。
+#   这份清单就是告诉它："跑这个项目，装这 3 个就够。"
+#
+# 本机的版本（2026-10-11 记）：
+#   fastapi  0.141.1
+#   uvicorn  0.53.0
+#   requests 2.34.2
+#   （pydantic 是 fastapi 自己带进来的，不用写在这儿）
+#
+# 本机装的时候要加国内镜像（服务器上不用，它在墙外）：
+#   pip install -r requirements.txt -i https://mirrors.aliyun.com/pypi/simple/
+
+fastapi==0.141.1
+uvicorn==0.53.0
+requests==2.34.2
