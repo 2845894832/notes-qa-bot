@@ -93,7 +93,7 @@ class 提问(BaseModel):
 def 问(单子: 提问) -> dict:
     try:
         答案 = 主程序.回答一个问题(单子.问题, 块们)
-        return {"答案": 答案}
+        return {"答案": 答案.replace("[[无答案]]", "笔记里没有相关内容。")}
     except RuntimeError as 错:
         # 店里出的事，得在门口挂块**有字**的牌子 ——
         # detail 那一栏里的字，会原样发给顾客（前端就靠它显示人话）。

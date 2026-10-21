@@ -2,3 +2,4 @@ __pycache__/
 *.pyc
 .venv/
 venv/
+_向量缓存.json
