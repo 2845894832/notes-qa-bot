@@ -1,0 +1,14 @@
+第 1 步：execute 交一句 SQL 下去，回来的是个「游标」
+    游 = <sqlite3.Cursor object at 0x01ACC4A8>
+    类型 = <class 'sqlite3.Cursor'>
+
+第 2 步：fetchone 从结果里取一行
+    行 = (21,)
+    类型 = <class 'tuple'>
+
+第 3 步：[0] 取这一行的第一格
+    数 = 21
+    类型 = <class 'int'>
+
+对照：如果 SQL 查的是两列，fetchone 回来的还是元组，只是格子多
+    两列 = (1, 8000.0)  类型 = <class 'tuple'>

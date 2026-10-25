@@ -1,0 +1,168 @@
+===== 问：红烧肉怎么做 =====
+    【search_notes】{"query": "红烧肉 做法 菜谱 烹饪"}
+    [search_notes] '红烧肉 做法 菜谱 烹饪' → 挑中 3 块
+        python-learning-2026-09-16.md:431  # 第二部分：pathlib（新知识点）
+        python-learning-2026-09-05.md:24  ## 练习文件
+        python-learning-2026-06-22.md:19  ### 常见坑
+        | [python-learning-2026-09-16.md:431 # 第二部分：pathlib（新知识点）]
+        | > 练习：`D:\CC Switch\pathlib_practice.py`（5 关，**全部完成**）
+        | > 形式：仿 `logging_practice.py`，每关先跑代码看现象、再讲原理。
+--------------------------------------------------
+笔记里没有相关内容。
+RESULT REJECT 红烧肉怎么做 | [[无答案]]
+===== 问：怎么用 Go 写一个 HTTP 服务 =====
+    【search_notes】{"query": "Go 语言 写 HTTP 服务"}
+    [search_notes] 'Go 语言 写 HTTP 服务' → 挑中 3 块
+        python-learning-2026-09-22.md:51  ### 关卡 3：传参数
+        python-learning-2026-09-22.md:203  ## 五、本轮知识点总结（一句话版）
+        python-learning-2026-09-29.md:135  ### 结果
+        | [python-learning-2026-09-22.md:51 ### 关卡 3：传参数]
+        | ```python
+        | resp = requests.get(网址, params={"userId": 1}, timeout=10)
+    【search_notes】{"query": "HTTP 服务 搭建 接口"}
+    [search_notes] 'HTTP 服务 搭建 接口' → 挑中 3 块
+        python-learning-2026-09-22.md:203  ## 五、本轮知识点总结（一句话版）
+        python-learning-2026-09-27.md:389  ### Python 学习路线
+        python-learning-2026-09-22.md:75  ### 关卡 4：出错了怎么办
+        | [python-learning-2026-09-22.md:203 ## 五、本轮知识点总结（一句话版）]
+        | - 网络请求 = 发出去 + 等回来 = 一个 Response 对象
+        | - 对象上按点号取：`.status_code`（单号）/ `.text`（字符）/ `.json()`（转成 dict/list）/ `.url` / `.headers`
+--------------------------------------------------
+笔记里没有相关内容。
+RESULT REJECT 怎么用 Go 写一个 HTTP 服务 | [[无答案]]
+===== 问：Kubernetes 怎么部署 =====
+    【search_notes】{"query": "Kubernetes 部署"}
+    [search_notes] 'Kubernetes 部署' → 挑中 3 块
+        python-learning-2026-09-16.md:233  ### 3. 顺序是死的：创建 → 配置 → 挂载
+        python-learning-2026-09-28.md:150  ### 结果
+        python-learning-2026-09-04.md:238  ## 下一步（更新）
+        | [python-learning-2026-09-16.md:233 ### 3. 顺序是死的：创建 → 配置 → 挂载]
+        | ```python
+        | logger = logging.getLogger("双通道")    # ① 先创建出来
+    【search_notes】{"query": "容器 部署 k8s"}
+    [search_notes] '容器 部署 k8s' → 挑中 3 块
+        python-learning-2026-09-04.md:192  ### 八、collections 模块 —— 强化版容器
+        python-learning-2026-09-28.md:150  ### 结果
+        python-learning-2026-09-07.md:73  ## 练习文件
+        | [python-learning-2026-09-04.md:192 ### 八、collections 模块 —— 强化版容器]
+        | | 容器 | 解决什么 | 关键点 |
+        | |------|---------|--------|
+--------------------------------------------------
+笔记里没有相关内容。
+RESULT REJECT Kubernetes 怎么部署 | [[无答案]]
+===== 问：React 的 useEffect 依赖数组怎么写 =====
+    【search_notes】{"query": "React useEffect 依赖数组"}
+    [search_notes] 'React useEffect 依赖数组' → 挑中 3 块
+        python-learning-2026-09-04.md:215  ### 十、popleft 的「返回值 + 副作用」
+        python-learning-2026-09-22.md:101  ### 关卡 5：实战 —— 拉名单做报告
+        python-learning-2026-06-23.md:43  ### 元组 vs 列表
+        | [python-learning-2026-09-04.md:215 ### 十、popleft 的「返回值 + 副作用」]
+        | `x = Tasks.popleft()` 做两件事：① 删掉队首（队列变短）② 把删掉的元素「返回」给你。
+        | - 接住：`x = Tasks.popleft()`；不接住直接打印：`print(Tasks.popleft())`
+    【search_notes】{"query": "useEffect 依赖数组 写法"}
+    [search_notes] 'useEffect 依赖数组 写法' → 挑中 3 块
+        python-learning-2026-09-04.md:215  ### 十、popleft 的「返回值 + 副作用」
+        python-learning-2026-09-23.md:105  ### 6. 读 assertEqual 的报错（顺带教的）
+        python-learning-2026-09-01.md:121  ## 踩坑 / 注意点
+        | [python-learning-2026-09-04.md:215 ### 十、popleft 的「返回值 + 副作用」]
+        | `x = Tasks.popleft()` 做两件事：① 删掉队首（队列变短）② 把删掉的元素「返回」给你。
+        | - 接住：`x = Tasks.popleft()`；不接住直接打印：`print(Tasks.popleft())`
+--------------------------------------------------
+笔记里没有相关内容。
+RESULT REJECT React 的 useEffect 依赖数组怎么写 | [[无答案]]
+===== 问：公司报销流程是什么 =====
+    【search_notes】{"query": "公司报销流程"}
+    [search_notes] '公司报销流程' → 挑中 3 块
+        python-learning-2026-09-28.md:9  ### 题目
+        python-learning-2026-09-29.md:9  ### 题目
+        python-learning-2026-09-16.md:329  ### 4. 完整流程
+        | [python-learning-2026-09-28.md:9 ### 题目]
+        | **门店归还记录 → 结算 → 写日报文件。**
+        | 
+--------------------------------------------------
+笔记里没有相关内容。
+RESULT REJECT 公司报销流程是什么 | [[无答案]]
+===== 问：Java 的 JVM 垃圾回收怎么调 =====
+    【search_notes】{"query": "JVM 垃圾回收 调优 Java"}
+    [search_notes] 'JVM 垃圾回收 调优 Java' → 挑中 3 块
+        python-learning-2026-09-27.md:407  ### 项目（都记在 `项目表.md`）
+        python-learning-2026-09-04.md:37  ## 二、json 模块 —— 装箱（dump）/ 拆箱（load）
+        python-learning-2026-09-08.md:29  ## 下一步
+        | [python-learning-2026-09-27.md:407 ### 项目（都记在 `项目表.md`）]
+        | - **C3 收工了**（今天）。下次想动项目，两条路：
+        |   - **B1 笔记重组**：卡在用户审 `搬移清单.md` 里那 94 块 `❓ 未归类`；第二阶段搬运工具还没写
+    【search_notes】{"query": "垃圾回收 GC"}
+    [search_notes] '垃圾回收 GC' → 挑中 3 块
+        python-learning-2026-09-27.md:1  # Python 学习 · 2026-09-27
+        python-learning-2026-09-27.md:407  ### 项目（都记在 `项目表.md`）
+        python-learning-2026-09-28.md:9  ### 题目
+        | [python-learning-2026-09-27.md:1 # Python 学习 · 2026-09-27]
+        | > 今天两件事：**每日综合题 · 轮次 5「异常处理」**（共享充电宝归还记录结算），
+        | > 加上 **C3 文档问答机器人收工**（命令行入口 + `black`）。
+--------------------------------------------------
+笔记里没有相关内容。
+RESULT REJECT Java 的 JVM 垃圾回收怎么调 | [[无答案]]
+===== 问：网页怎么水平居中一个 div =====
+    【search_notes】{"query": "div 水平居中 CSS"}
+    [search_notes] 'div 水平居中 CSS' → 挑中 3 块
+        python-learning-2026-09-16.md:887  ### 讲法（有效，可复用）
+        python-learning-2026-09-23.md:68  ### 4. `with self.assertRaises(...) as 上下文` —— 讲了三轮才通
+        python-learning-2026-09-04.md:93  ### 读回来（DictReader）
+        | [python-learning-2026-09-16.md:887 ### 讲法（有效，可复用）]
+        | 拿 `enumerate(文本)` 打出**逐字位置编号表**，让"位置 0 只有一个"变成看得见的东西。再补一段"城门口站的不是 cat"（`"a cat"` 上 `^cat` → `[]`）和"城门口站的是 category"（`^cat` 也能匹配前 3 个字母）两个反例。
+        | 
+    【search_notes】{"query": "网页 居中 布局"}
+    [search_notes] '网页 居中 布局' → 挑中 3 块
+        python-learning-2026-09-16.md:887  ### 讲法（有效，可复用）
+        python-learning-2026-09-27.md:233  ### `main()` —— 抄了骨架，但结构对，输出一字不差
+        python-learning-2026-09-16.md:891  ## 关卡 4：分组 —— 把想要的那部分圈出来
+        | [python-learning-2026-09-16.md:887 ### 讲法（有效，可复用）]
+        | 拿 `enumerate(文本)` 打出**逐字位置编号表**，让"位置 0 只有一个"变成看得见的东西。再补一段"城门口站的不是 cat"（`"a cat"` 上 `^cat` → `[]`）和"城门口站的是 category"（`^cat` 也能匹配前 3 个字母）两个反例。
+        | 
+--------------------------------------------------
+笔记里没有相关内容。
+RESULT REJECT 网页怎么水平居中一个 div | [[无答案]]
+===== 问：股票开户要多少钱 =====
+    【search_notes】{"query": "股票开户 多少钱"}
+    [search_notes] '股票开户 多少钱' → 挑中 3 块
+        python-learning-2026-09-28.md:48  ### 结果
+        python-learning-2026-09-28.md:9  ### 题目
+        python-learning-2026-09-29.md:9  ### 题目
+        | [python-learning-2026-09-28.md:48 ### 结果]
+        | ✅ **main 的输出与预期一字不差**（3 轮返工，每轮改一处）。
+        | 
+    【search_notes】{"query": "开户 费用"}
+    [search_notes] '开户 费用' → 挑中 3 块
+        python-learning-2026-09-28.md:9  ### 题目
+        python-learning-2026-09-29.md:9  ### 题目
+        python-learning-2026-09-27.md:101  ### `计费(分钟, 单价)` —— 自己写的，对着看
+        | [python-learning-2026-09-28.md:9 ### 题目]
+        | **门店归还记录 → 结算 → 写日报文件。**
+        | 
+--------------------------------------------------
+笔记里没有相关内容。
+RESULT REJECT 股票开户要多少钱 | [[无答案]]
+===== 问：吉他 C 和弦怎么按 =====
+    【search_notes】{"query": "吉他 C 和弦 怎么按"}
+    [search_notes] '吉他 C 和弦 怎么按' → 挑中 3 块
+        python-learning-2026-06-22.md:42  ### 基本操作
+        python-learning-2026-09-10.md:31  ### 第 2 轮：拼写 + 改多了
+        python-learning-2026-09-03.md:213  #### 字典按值排序
+        | [python-learning-2026-06-22.md:42 ### 基本操作]
+        | | 操作 | 写法 | 说明 |
+        | |------|------|------|
+--------------------------------------------------
+笔记里没有相关内容。
+RESULT REJECT 吉他 C 和弦怎么按 | [[无答案]]
+===== 问：北京明天天气怎么样 =====
+    【search_notes】{"query": "北京明天天气"}
+    [search_notes] '北京明天天气' → 挑中 3 块
+        python-learning-2026-09-28.md:48  ### 结果
+        python-learning-2026-09-28.md:9  ### 题目
+        python-learning-2026-09-04.md:108  ## 四、datetime 模块 —— 拿现在 / 格式化 / 解析 / 算时间差
+        | [python-learning-2026-09-28.md:48 ### 结果]
+        | ✅ **main 的输出与预期一字不差**（3 轮返工，每轮改一处）。
+        | 
+--------------------------------------------------
+笔记里没有相关内容。
+RESULT REJECT 北京明天天气怎么样 | [[无答案]]

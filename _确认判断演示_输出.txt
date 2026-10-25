@@ -1,0 +1,11 @@
+'y' -> True
+'Y' -> True
+' y ' -> True
+'yes' -> True
+'YES' -> True
+'Yes ' -> True
+'n' -> False
+'no' -> False
+'' -> False
+'   ' -> False
+'好' -> False

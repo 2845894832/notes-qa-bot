@@ -1,0 +1,310 @@
+可用块：454
+===== 问：闭包是什么 =====
+search_notes
+ {'query': '闭包 是什么'}
+['[python-learning-2026-09-01.md:99 ### 二、闭包]', '- **闭包 = 内层函数 + 它捕获的外层变量**', '- 外层函数已返回，被捕获的变量还活着（和生成器"暂停-恢复"同一机制）']
+--------------------------------------------------
+**闭包的定义：内层函数 + 它捕获的外层变量。**
+
+要点（见 [python-learning-2026-09-01.md:99]）：
+
+- 外层函数已经返回，但被捕获的那个变量还活着，这和生成器“暂停—恢复”是同一机制。
+- 返回的是**函数对象本身**，即 `return inner`；不是调用结果，即 `return inner()`。
+- 常用来做**函数工厂**，比如 `make_power(n)`：同一个模板配不同的“记忆”，造出不同函数。
+  [有] 作答  3.3s  闭包是什么
+===== 问：装饰器是干嘛的 =====
+search_notes
+ {'query': '装饰器 是什么'}
+['[python-learning-2026-09-01.md:170 ### 核心概念]', '- 装饰器 = 接收函数、返回函数的函数（闭包的应用）', '- `@decorator` 语法糖 = `func = decorator(func)`（包函数是动作，@ 是甜写法）']
+search_notes
+ {'query': '装饰器 用法 语法糖'}
+['[python-learning-2026-09-01.md:170 ### 核心概念]', '- 装饰器 = 接收函数、返回函数的函数（闭包的应用）', '- `@decorator` 语法糖 = `func = decorator(func)`（包函数是动作，@ 是甜写法）']
+--------------------------------------------------
+装饰器就是**接收函数、返回函数的函数**（本质是闭包的应用）[python-learning-2026-09-01.md:170]。
+
+关键几点：
+
+- `@decorator` 是语法糖，等价于 `func = decorator(func)`——包函数是动作，`@` 只是甜写法 [python-learning-2026-09-01.md:170]
+- 区分 `func`（被装饰的原函数，一个函数对象）和 `func()`（调用它），这是最容易混的地方 [python-learning-2026-09-01.md:170]
+- `*args` / `**kwargs` 用来接收任意参数，原样转发给原函数 [python-learning-2026-09-01.md:170]
+
+带参数的装饰器要三层嵌套 [python-learning-2026-09-01.md:177]：
+
+| 层 | 函数 | 收什么 | 返回什么 |
+|----|------|--------|---------|
+| 外层 | `repeat(n)` | 装饰器参数 | decorator |
+| 中层 | `decorator(func)` | 被装饰函数 | wrapper |
+| 内层 | `wrapper(...)` | 调用参数 | 执行结果 |
+
+笔记里标了「反复犯」的坑 [python-learning-2026-09-01.md:185]：
+
+- 装饰器**外层**要 `return wrapper`（函数对象），不是 `return func(...)`（调用结果）
+- wrapper **内层**要 `func(*args, **kwargs)` 转发参数，不是 `func()`（会丢参数）
+- 用 `functools.wraps(func)` 保留原函数的名字和文档
+  [有] 作答  6.1s  装饰器是干嘛的
+===== 问：with 语句怎么用 =====
+search_notes
+ {'query': 'with 语句 用法'}
+['[python-learning-2026-08-14.md:55 ### 关键收获]', '- `with` 是 `try/finally` 的语法糖，文件在 `__exit__` 里自动 close', '- `"w"` 会先清空文件，`"a"` 在末尾追加；用 `"x"` 可防止误覆盖']
+--------------------------------------------------
+`with` 的核心用法，笔记里讲的是文件操作这类场景：
+
+- **本质**：`with` 是 `try/finally` 的语法糖，文件会在 `__exit__` 里自动 close，不用你手动关。[python-learning-2026-08-14.md:55]
+- **打开模式**：`"w"` 会先清空文件，`"a"` 在末尾追加；用 `"x"` 可防止误覆盖。[python-learning-2026-08-14.md:55]
+- **逐行读**：`for line in f` 逐行迭代，配 `strip()` 去换行。[python-learning-2026-08-14.md:55]
+- **自定义上下文管理器**：`__enter__` 的返回值给 `as` 后面的变量，`__exit__` 里做清理。[python-learning-2026-08-14.md:55]
+
+另外笔记里还有一个 `with` 的专门用法 —— `with self.assertRaises(ValueError)`，读作“下面这块，我要求它报 ValueError”；`as 上下文` 就是把异常**接住**，和 `except ... as e` 是同一个动作，之后可以用 `str(上下文.exception)` 检查异常消息内容。[python-learning-2026-09-23.md:68]
+  [有] 作答  3.9s  with 语句怎么用
+===== 问：字典怎么按值排序 =====
+search_notes
+ {'query': '字典按值排序'}
+['[python-learning-2026-09-03.md:213 #### 字典按值排序]', '`sorted()` 直接比字典时比的是**键**；要按**值**排，先用 `.items()` 把字典拆成', '`(键, 值)` 元组，再用 `key` 取每一对的第 2 项：']
+search_notes
+ {'query': 'sorted 排序 字典 items'}
+['[python-learning-2026-09-02.md:42 ### `sorted` 的 key（最常用的 lambda 场景）]', '```python', 'sorted(students, key=lambda s: s["score"], reverse=True)  # 字典列表按 score 降序']
+--------------------------------------------------
+字典要按值排序，做法是：先用 `.items()` 把字典拆成 `(键, 值)` 元组，再用 `key=lambda kv: kv[1]` 指定按值比较；如果直接比字典，比的是键。[python-learning-2026-09-03.md:213]
+
+```python
+d = {"苹果": 3, "香蕉": 1, "橘子": 2}
+
+按值升序 = sorted(d.items(), key=lambda kv: kv[1])
+# [('香蕉', 1), ('橘子', 2), ('苹果', 3)]
+
+按值降序 = sorted(d.items(), key=lambda kv: kv[1], reverse=True)
+# [('苹果', 3), ('橘子', 2), ('香蕉', 1)]
+```
+
+笔记里点出的两个注意点：[python-learning-2026-09-03.md:213]
+- `kv` 是 `(键, 值)` 元组，`kv[1]` 才是值；如果写成 `kv[0]`，就会变成按键排序。
+- 想结果仍然是字典，排完再套一层 `dict(...)`：`dict(sorted(d.items(), key=lambda kv: kv[1]))`。
+
+补充两点通用规则：`reverse=True` 表示降序，默认升序；`key` 是“排序依据的转换器”，其参数是每个元素，返回值是拿什么来比较 [python-learning-2026-09-03.md:178]。另外 `sorted()` 返回新列表、不动原对象，`list.sort()` 才是原地改 [python-learning-2026-09-03.md:178]。
+  [有] 作答  5.7s  字典怎么按值排序
+===== 问：虚拟环境是干嘛的 =====
+search_notes
+ {'query': '虚拟环境 是什么 作用'}
+['[python-learning-2026-09-02.md:199 ### 核心理解（为什么）]', '1. **为什么需要 venv**：全局只有一个 Python，所有项目的包堆一起 → 版本冲突；venv = 每个项目一个独立小仓库', '2. **venv 本质** = 复制一份 Python + 独立包目录（`Lib/site-packages`）；"激活"只是临时把 venv 的 `Scripts` 塞进 PATH 最前面']
+search_notes
+ {'query': 'venv 虚拟环境 用法'}
+['[python-learning-2026-09-02.md:220 ### 练习]', '- `venv_demo/myenv`：创建 venv + 装 requests + 导出 requirements.txt，全程跑通 ✅', '']
+--------------------------------------------------
+虚拟环境（venv）是给**每个项目单独建一个“独立小仓库”**，用来安装这个项目自己的第三方包。
+
+**为什么需要它**：全局只有一个 Python，所有项目的包都堆在一起，容易版本冲突；有了 venv，每个项目就各用各的包，互不干扰。[python-learning-2026-09-02.md:199]
+
+**本质**：venv 相当于复制一份 Python，并配一个独立的包目录（`Lib/site-packages`）。所谓“激活”，只是临时把这个 venv 的 `Scripts` 目录放到 PATH 最前面，所以命令会优先使用它里面的 python 和 pip。[python-learning-2026-09-02.md:199]
+
+**隔离的关键**：`include-system-site-packages = false`，它让 venv 看不到全局包（改成 `true` 就能看到）。[python-learning-2026-09-02.md:199]
+
+**常用命令** [python-learning-2026-09-02.md:187][python-learning-2026-09-03.md:39]：
+
+| 操作 | 命令 |
+|------|------|
+| 创建 | `python -m venv myenv` |
+| 激活 | `source myenv/Scripts/activate` |
+| 退出 | `deactivate` |
+| 导出依赖清单 | `pip freeze > requirements.txt` |
+| 按清单还原环境 | `pip install -r requirements.txt` |
+
+另外，装包时 pip 会自动解析依赖：例如安装 `requests` 会顺带装上 urllib3、idna、certifi、charset_normalizer 这四个包。[python-learning-2026-09-02.md:199]
+  [有] 作答  5.1s  虚拟环境是干嘛的
+===== 问：asyncio 和线程池怎么选 =====
+search_notes
+ {'query': 'asyncio 和线程池 怎么选'}
+['[python-learning-2026-09-14.md:107 ### 救生圈：`asyncio.to_thread`]', '**规律（背下来）：**', '']
+search_notes
+ {'query': 'asyncio 并发'}
+['[python-learning-2026-09-11.md:352 ## 下一步]', '- ⏳ **第 3 关：asyncio 与协程** —— 现代 Python 高并发主流', '  - `async`/`await` 语法、事件循环']
+--------------------------------------------------
+**核心判断标准很清晰：这个函数是 `async def`，还是普通的 `def`、会阻塞？** [python-learning-2026-09-14.md:107]
+
+- 如果函数是 `async def`，也支持 `await`（例如各家 `AsyncClient`、LangChain 异步接口），就直接 `await` 它，交给事件循环处理，**用不着线程池**。
+- 如果函数是普通 `def`，而且会阻塞（比如只有同步接口的某家大模型 SDK、`time.sleep`、同步 HTTP 请求），想把它放进协程里就必须用 `to_thread` 包一层——`to_thread` 返回一个可等待对象，同时**真的把同步函数丢到线程池里跑**，事件循环不会被堵 [python-learning-2026-09-14.md:107]。
+
+```python
+IO任务("1")                     # ❌ 同步调用：立刻跑完 + 堵死事件循环
+asyncio.to_thread(IO任务, "1")  # ✅ 包成可等待对象，扔线程池里跑
+```
+
+两者到底差在哪：线程版是“3 个店员、3 个窗口”，店员接单后去后厨**站着等**，窗口空着；协程版是“1 个店员、1 个窗口”，把单子递进后厨就**立刻回头招呼下一位**，由事件循环（店员手上的记事本）记着哪单快好了。**全程只有一个线程**，所以并发版打印出来的线程名永远是 `MainThread` [python-learning-2026-09-14.md:59]。
+
+再补充两个操作细节，都是你之前踩过的坑：
+- `asyncio.gather(...)` 前面别忘了 `await`，否则【并发】那段一行输出都没有，任务会漏到下一题去跑 [python-learning-2026-09-14.md:152]。
+- 别把 `async def` 的函数传给 `to_thread`——它在线程里执行只会返回一个协程对象，实际根本没跑，还会报 `RuntimeWarning: coroutine ... was never awaited` [python-learning-2026-09-14.md:152]。
+
+顺带说一句：你笔记里的结论是**这条路线越往后越是“同步 SDK + `to_thread`”的天下**——主流 AI 框架（FastAPI、LangChain 异步接口、各家 `AsyncClient`）全是 `async` 的，所以默认优先选 asyncio，线程池只是用来把阻塞的同步代码接进 asyncio 的桥梁 [python-learning-2026-09-14.md:349]。
+  [有] 作答  7.8s  asyncio 和线程池怎么选
+===== 问：断点调试怎么打断点 =====
+search_notes
+ {'query': '断点调试 怎么打断点'}
+['[python-learning-2026-09-07.md:59 ### 5. breakpoint() / pdb]', '- `breakpoint()` 停在那一行；`p 变量`看值、`n`下一行、`c`继续、`q`退出', '']
+--------------------------------------------------
+用 `breakpoint()` 打断点：在代码里想停下的那一行写 `breakpoint()`，程序运行到那儿就会停下来 [python-learning-2026-09-07.md:59]。
+
+停下之后的常用命令 [python-learning-2026-09-07.md:59]：
+- `p 变量` — 查看变量的值
+- `n` — 执行下一行
+- `c` — 继续运行
+- `q` — 退出调试
+  [有] 作答  3.5s  断点调试怎么打断点
+===== 问：怎么判断输入是不是数字 =====
+search_notes
+ {'query': '判断输入是不是数字'}
+['[python-learning-2026-07-02.md:250 ## 新学了两个东西]', '- `.isdigit()`：判断字符串是否纯数字', '']
+search_notes
+ {'query': 'isdigit 数字校验 输入'}
+['[python-learning-2026-07-02.md:250 ## 新学了两个东西]', '- `.isdigit()`：判断字符串是否纯数字', '']
+--------------------------------------------------
+用 `.isdigit()` 判断。
+
+`input()` 拿到的一直是字符串，所以在用 `int()` 转换前，先用 `.isdigit()` 检查它是不是纯数字：
+
+```python
+x = input("输入数字: ")
+if x.isdigit():
+    num = int(x)
+else:
+    print("无效")
+```
+
+- `"95".isdigit()` → `True`，`"abc".isdigit()` → `False` [python-learning-2026-07-02.md:250]
+- 直接写 `int(input(...))` 而不做保护，输入字母就会直接报错；先 `.isdigit()` 再转换 [python-learning-2026-07-03.md:67]
+- 笔记里特别提醒：这个阶段不要用 `try/except` 做错误处理，就用学过的 `if` + `.isdigit()` [python-learning-2026-07-02.md:219]
+
+顺带一个相关注意点：`input()` 的结果要跟数字比较或运算，必须先 `int()` 转换，否则 `"10" + "5"` 得到的是 `"105"` [python-learning-2026-07-02.md:153]。
+  [有] 作答  5.5s  怎么判断输入是不是数字
+===== 问：列表推导式怎么写 =====
+search_notes
+ {'query': '列表推导式 写法'}
+['[python-learning-2026-09-01.md:47 ### 生成器表达式]', '- 列表推导式 `[]` 换成 `()` 就是生成器表达式，惰性、省内存', '- `sum(x*x for x in range(...))` 不占内存（列表版会先造整个列表）']
+search_notes
+ {'query': '列表推导式 语法 例子 for if'}
+['[python-learning-2026-09-01.md:47 ### 生成器表达式]', '- 列表推导式 `[]` 换成 `()` 就是生成器表达式，惰性、省内存', '- `sum(x*x for x in range(...))` 不占内存（列表版会先造整个列表）']
+--------------------------------------------------
+你的笔记里直接出现写法的地方是这句练习记录：
+
+- 列表推导式的基本形状是 `[表达式 for 元素 in 可迭代对象]`，笔记里的例子是 `[line.strip() for line in f]` —— 把 `for line in f` 逐行遍历出来的每一行，都过一遍 `strip()`，结果收成一个新列表 [python-learning-2026-08-14.md:55]
+
+配套的一条相关笔记讲它和生成器表达式的关系：
+
+- 把列表推导式的方括号 `[]` 换成圆括号 `()`，就是生成器表达式，惰性求值、省内存；比如 `sum(x*x for x in range(...))` 不占内存，而列表版会先把整个列表造出来 [python-learning-2026-09-01.md:47]
+
+所以：要一个现成的列表就用 `[...]`，只是喂给 `sum()` 这类函数、不想占内存就用 `(...)`。
+  [有] 作答  7.3s  列表推导式怎么写
+===== 问：pip 和 requirements.txt 的关系 =====
+search_notes
+ {'query': 'pip 和 requirements.txt 的关系'}
+['[python-learning-2026-09-02.md:187 ### 学了什么]', '| 概念 | 命令 | 一句话 |', '|------|------|--------|']
+search_notes
+ {'query': 'requirements.txt 依赖安装 pip install -r'}
+['[python-learning-2026-09-02.md:187 ### 学了什么]', '| 概念 | 命令 | 一句话 |', '|------|------|--------|']
+--------------------------------------------------
+**pip 和 requirements.txt**（[python-learning-2026-09-02.md:187]）：
+
+- **pip** 是安装第三方库的工具：`pip install 包名`
+- **requirements.txt** 是 pip 用来记录依赖包清单的文件；它的内容由 pip 生成，也能交给 pip 使用：
+  - **导出依赖**：`pip freeze > requirements.txt`，用来生成包清单
+  - **还原依赖**：`pip install -r requirements.txt`，用来一键还原环境
+
+因此，两者之间是**“工具与清单”**的关系：pip 负责装包，`requirements.txt` 负责记录需要装哪些包；只要用同一条命令，就能在同一台电脑或团队其他电脑上复现出同样的环境。
+
+配套要点（[python-learning-2026-09-02.md:199]）：
+- pip 会自动解析依赖。例如，安装 `requests` 时，会自动安装 `urllib3`、`idna`、`certifi`、`charset_normalizer` 这四个包，而它们也会一并出现在 `freeze` 的结果里
+- `pip freeze` 导出的是**当前环境**（通常是 venv 内）的包；因此，先激活 venv 再导出，清单才是干净的
+- 国内加速：`pip install -r requirements.txt -i https://mirrors.aliyun.com/pypi/simple/`
+- 同一套命令在 [python-learning-2026-09-03.md:39] 也复习过
+  [有] 作答  5.5s  pip 和 requirements.txt 的关系
+===== 问：红烧肉怎么做 =====
+search_notes
+ {'query': '红烧肉 做法'}
+['[python-learning-2026-09-14.md:75 ## 四、`gather` 与 `create_task`]', '两个都是"把票递进后厨"，区别在**你等不等**：', '']
+--------------------------------------------------
+笔记里没有相关内容。
+  [没] 拒答  4.0s  红烧肉怎么做
+===== 问：怎么用 Go 写一个 HTTP 服务 =====
+search_notes
+ {'query': 'Go 写 HTTP 服务'}
+['[python-learning-2026-09-22.md:51 ### 关卡 3：传参数]', '```python', 'resp = requests.get(网址, params={"userId": 1}, timeout=10)']
+search_notes
+ {'query': 'HTTP 服务 搭建 接口'}
+['[python-learning-2026-09-22.md:203 ## 五、本轮知识点总结（一句话版）]', '- 网络请求 = 发出去 + 等回来 = 一个 Response 对象', '- 对象上按点号取：`.status_code`（单号）/ `.text`（字符）/ `.json()`（转成 dict/list）/ `.url` / `.headers`']
+--------------------------------------------------
+笔记里没有相关内容。
+  [没] 拒答  4.3s  怎么用 Go 写一个 HTTP 服务
+===== 问：Kubernetes 怎么部署 =====
+search_notes
+ {'query': 'Kubernetes 部署'}
+['[python-learning-2026-09-16.md:233 ### 3. 顺序是死的：创建 → 配置 → 挂载]', '```python', 'logger = logging.getLogger("双通道")    # ① 先创建出来']
+search_notes
+ {'query': 'K8s 容器 集群'}
+['[python-learning-2026-09-04.md:192 ### 八、collections 模块 —— 强化版容器]', '| 容器 | 解决什么 | 关键点 |', '|------|---------|--------|']
+--------------------------------------------------
+笔记里没有相关内容。
+  [没] 拒答  3.6s  Kubernetes 怎么部署
+===== 问：React 的 useEffect 依赖数组怎么写 =====
+search_notes
+ {'query': 'useEffect 依赖数组'}
+['[python-learning-2026-09-04.md:215 ### 十、popleft 的「返回值 + 副作用」]', '`x = Tasks.popleft()` 做两件事：① 删掉队首（队列变短）② 把删掉的元素「返回」给你。', '- 接住：`x = Tasks.popleft()`；不接住直接打印：`print(Tasks.popleft())`']
+search_notes
+ {'query': 'React 生命周期 副作用'}
+['[python-learning-2026-09-04.md:215 ### 十、popleft 的「返回值 + 副作用」]', '`x = Tasks.popleft()` 做两件事：① 删掉队首（队列变短）② 把删掉的元素「返回」给你。', '- 接住：`x = Tasks.popleft()`；不接住直接打印：`print(Tasks.popleft())`']
+--------------------------------------------------
+笔记里没有相关内容。
+  [没] 拒答  3.6s  React 的 useEffect 依赖数组怎么写
+===== 问：公司报销流程是什么 =====
+search_notes
+ {'query': '公司报销流程'}
+['[python-learning-2026-09-28.md:9 ### 题目]', '**门店归还记录 → 结算 → 写日报文件。**', '']
+--------------------------------------------------
+笔记里没有相关内容。
+  [没] 拒答  3.0s  公司报销流程是什么
+===== 问：Java 的 JVM 垃圾回收怎么调 =====
+search_notes
+ {'query': 'JVM 垃圾回收 调优'}
+['[python-learning-2026-09-04.md:37 ## 二、json 模块 —— 装箱（dump）/ 拆箱（load）]', '**核心比喻**：把 Python 对象「装箱」成文字（方便存文件 / 发网络），用时再「拆箱」变回对象。', '']
+search_notes
+ {'query': 'Java 垃圾回收器'}
+['[python-learning-2026-09-04.md:37 ## 二、json 模块 —— 装箱（dump）/ 拆箱（load）]', '**核心比喻**：把 Python 对象「装箱」成文字（方便存文件 / 发网络），用时再「拆箱」变回对象。', '']
+--------------------------------------------------
+笔记里没有相关内容。
+  [没] 拒答  3.6s  Java 的 JVM 垃圾回收怎么调
+===== 问：网页怎么水平居中一个 div =====
+search_notes
+ {'query': 'div 水平居中 CSS'}
+['[python-learning-2026-09-16.md:887 ### 讲法（有效，可复用）]', '拿 `enumerate(文本)` 打出**逐字位置编号表**，让"位置 0 只有一个"变成看得见的东西。再补一段"城门口站的不是 cat"（`"a cat"` 上 `^cat` → `[]`）和"城门口站的是 category"（`^cat` 也能匹配前 3 个字母）两个反例。', '']
+search_notes
+ {'query': '网页 布局 居中'}
+['[python-learning-2026-09-16.md:887 ### 讲法（有效，可复用）]', '拿 `enumerate(文本)` 打出**逐字位置编号表**，让"位置 0 只有一个"变成看得见的东西。再补一段"城门口站的不是 cat"（`"a cat"` 上 `^cat` → `[]`）和"城门口站的是 category"（`^cat` 也能匹配前 3 个字母）两个反例。', '']
+--------------------------------------------------
+笔记里没有相关内容。
+  [没] 拒答  4.0s  网页怎么水平居中一个 div
+===== 问：股票开户要多少钱 =====
+search_notes
+ {'query': '股票开户 费用'}
+['[python-learning-2026-09-28.md:9 ### 题目]', '**门店归还记录 → 结算 → 写日报文件。**', '']
+search_notes
+ {'query': '开户 佣金 证券账户'}
+['[python-learning-2026-09-28.md:9 ### 题目]', '**门店归还记录 → 结算 → 写日报文件。**', '']
+--------------------------------------------------
+笔记里没有相关内容。
+  [没] 拒答  6.5s  股票开户要多少钱
+===== 问：吉他 C 和弦怎么按 =====
+search_notes
+ {'query': '吉他 C 和弦 怎么按'}
+['[python-learning-2026-06-22.md:42 ### 基本操作]', '| 操作 | 写法 | 说明 |', '|------|------|------|']
+--------------------------------------------------
+笔记里没有相关内容。
+  [没] 拒答  2.9s  吉他 C 和弦怎么按
+===== 问：北京明天天气怎么样 =====
+search_notes
+ {'query': '北京明天天气'}
+['[python-learning-2026-09-28.md:48 ### 结果]', '✅ **main 的输出与预期一字不差**（3 轮返工，每轮改一处）。', '']
+--------------------------------------------------
+笔记里没有相关内容。
+  [没] 拒答  3.3s  北京明天天气怎么样
+
+有答案的 10 题：误拒 0 条
+没答案的 10 题：误答（没拒） 0 条
+平均耗时：4.6s

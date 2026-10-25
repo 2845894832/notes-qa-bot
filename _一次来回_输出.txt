@@ -1,0 +1,125 @@
+问：with 语句怎么用
+
+======================================================================
+第一张纸【你 → 它】：请求体里的 tools（就是「装在手里」的全部东西）
+======================================================================
+[
+  {
+    "type": "function",
+    "function": {
+      "name": "search_notes",
+      "description": "在我的学习笔记里搜索跟问题相关的段落。返回段落正文，每段前面带出处 [文件名:行号]。",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string",
+            "description": "搜索用的关键词或一句话"
+          }
+        },
+        "required": [
+          "query"
+        ]
+      }
+    }
+  }
+]
+
+======================================================================
+第二张纸【它 → 你】：finish_reason = tool_calls，回话原文如下
+======================================================================
+{
+  "role": "assistant",
+  "content": "",
+  "reasoning_content": "The user is asking in Chinese: \"How do you use the `with` statement?\" This is likely about Python's with statement (context manager). But I have a tool to search notes. The instructions say to search notes for content related to the question. Let me search my notes for \"with 语句\" to see if there's relevant learning material.\n\nI should use the search_notes tool since it's available and relevant.",
+  "tool_calls": [
+    {
+      "index": 0,
+      "id": "call_00_gCsMFGnBRbSpq4Rr5E1l3664",
+      "type": "function",
+      "function": {
+        "name": "search_notes",
+        "arguments": "{\"query\": \"with 语句 上下文管理器\"}"
+      }
+    },
+    {
+      "index": 1,
+      "id": "call_01_68Dfj6fja2tjgb5gKIEZ3457",
+      "type": "function",
+      "function": {
+        "name": "search_notes",
+        "arguments": "{\"query\": \"with 用法 文件打开\"}"
+      }
+    }
+  ]
+}
+
+>>> 你的代码接手：工具表["search_notes"](**{'query': 'with 语句 上下文管理器'})
+        （你的代码正在跑：检索.找相关('with 语句 上下文管理器') → 翻出 3 块）
+
+>>> 你的代码接手：工具表["search_notes"](**{'query': 'with 用法 文件打开'})
+        （你的代码正在跑：检索.找相关('with 用法 文件打开') → 翻出 3 块）
+
+======================================================================
+第三张纸【你 → 它】：刚才塞回去的那条 role=tool（正文只打前 300 字）
+======================================================================
+{
+  "role": "tool",
+  "tool_call_id": "call_01_68Dfj6fja2tjgb5gKIEZ3457",
+  "content": "[python-learning-2026-08-14.md:55 ### 关键收获]\n- `with` 是 `try/finally` 的语法糖，文件在 `__exit__` 里自动 close\n- `\"w\"` 会先清空文件，`\"a\"` 在末尾追加；用 `\"x\"` 可防止误覆盖\n- `for line in f` 逐行迭代，配 `strip()` 去换行\n- 自定义上下文管理器：`__enter__` 返回值给 `as` 后面的变量，`__exit__` 里做清理\n- `sum(1 for _ in f)` 数行数 —— 这是生成器表达式，下一站\"迭代器/生成器\"的伏笔\n- 练习里用了列表推……"
+}
+
+======================================================================
+它第二次的回话（finish_reason = stop）
+======================================================================
+`with` 的核心只有一句：**它是 `try/finally` 的语法糖，负责让“清理代码”在离开代码块时自动执行，即使中途抛出异常也一样。**（这是我笔记 `python-learning-2026-08-14` 里总结的。）
+
+## 1. 最常见的场景：打开文件
+
+```python
+with open("data.txt", "r", encoding="utf-8") as f:
+    for line in f:
+        print(line.strip())
+# 出了这个块，f 已经自动 close 了，不用手动 f.close()
+```
+
+- **`as` 后面拿到的值是 `__enter__` 的返回值**，而不是 `with` 后面那个 `open(...)` 对象本身（对文件来说两者恰好相同）。
+- `mode`：`"r"` 读取、`"w"` 覆盖写入（**先清空**）、`"a"` 追加写入、`"x"` 在文件已存在时报错（防止误覆盖）。
+- 逐行读取用 `for line in f`，并配合 `strip()` 去掉换行符。
+- **`encoding="utf-8"` 别忘**；这跟 `FileHandler` 忘了写 encoding 是同一个问题。
+
+## 2. 自定义上下文管理器
+
+只要类中实现了 `__enter__` 和 `__exit__`，这个类的对象就能放在 `with` 后面：
+
+```python
+class 计时器:
+    def __enter__(self):
+        self.start = time.time()
+        return self          # ← 这个返回值给 as 后面的变量
+
+    def __exit__(self, exc_type, exc, tb):
+        print("耗时", time.time() - self.start)
+        return False         # 返回 False/None：异常继续往外抛
+```
+
+- `__exit__` 的三个参数分别是“异常类型、异常对象、traceback”；如果没有异常，这三个参数都是 `None`。
+- `__exit__` **返回 True 会吞掉异常**，返回 `False` / `None` 则让异常继续传播。
+- 不管代码块里是正常结束还是中途抛异常，`__exit__` 都一定会执行；这就是“自动清理”的来源。
+
+## 3. 两种已经在用的变体
+
+**测试里**：`with self.assertRaises(ValueError) as 上下文:` 表示“下面这段代码必须报 ValueError”；`as 上下文` 用于接住异常，异常本体在 `上下文.exception` 里，要检查异常消息时使用 `assertIn(..., str(上下文.exception))`。
+
+**pathlib 简写**：`文件.write_text(..., encoding="utf-8")` / `文件.read_text(encoding="utf-8")` 就是 `with open(...) as f: f.read()/f.write()` 的简写，同样别忘了 encoding。
+
+## 4. 一句话记忆
+
+> `with XXX as y:` 表示进入时执行 `XXX.__enter__()`，并把它的返回值绑定到 `y`；离开时无论正常结束还是抛出异常，都会执行 `XXX.__exit__(...)`。文件、锁、数据库连接、计时器都靠这个机制自动完成清理。
+
+----------------------------------------------------------------------
+数一数：请求 2 次、tools 数组大小 1、你的函数跑了 2 次。
+从头到尾，检索的代码都在你这边跑；模型只写了这几个词：
+    {"query": "with 语句 上下文管理器"}
+    {"query": "with 用法 文件打开"}
+—— 那就是「把检索装在它手里」的全部含义：它决定问什么，你负责去查。
