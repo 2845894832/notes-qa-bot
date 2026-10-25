@@ -98,12 +98,15 @@ import 主程序  # noqa: E402
 记('" + 申请' not in 源, "没有 str + dict 那种写法", "干净" if '" + 申请' not in 源 else "!! 又写回去了")
 
 
-# ── ⑦ 线上没有键盘：得先问"有没有终端"，不能只等 EOFError ─────────
-# 容器里的 stdin 是"一根永远没人说话的空管"：input() 不抛 EOF，而是一直等 → 504。
+# ── ⑦ 线上没有键盘：判定权在入口，不在环境 ───────────────────────
+# 容器里的 stdin 不抛 EOF（一直等 → 504），连 isatty() 都返回 True。
+# 所以"有没有人能点头"必须是调用方声明：允许确认 默认 False。
+_参数表 = list(参数们.values())
 记(
-    "sys.stdin.isatty()" in 源,
-    "闸门先问 isatty 再 input",
-    "有" if "sys.stdin.isatty()" in 源 else "!! 只靠 EOFError，线上会卡到 504",
+    len(_参数表) > 4 and _参数表[4].default is False,
+    "允许确认 默认 False",
+    "闸门只认入口声明" if len(_参数表) > 4 and _参数表[4].default is False
+    else "!! 没人声明，线上会卡到 504",
 )
 
 
