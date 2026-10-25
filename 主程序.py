@@ -141,11 +141,17 @@ def 请求确认(名字: str, 参数: dict) -> bool:
     """把「将要发生什么」摊给用户看，收一个 y/n。默认必须是"不执行"。"""
     print(f"将要执行：{名字} {json.dumps(参数, ensure_ascii=False)}")
     print("会改账本：写入 1 行")
+    # ⚠️ 第 10 课补的：容器里的 stdin 不是"结束"，是"一根永远没人说话的空管"。
+    # 直接 input() 不会抛 EOFError，而是**一直等**下去 —— 线上表现就是 504（121 秒）。
+    # isatty() = "接在我后面的是不是一个真人终端"。不是 → 当没人点头。
+    if not sys.stdin.isatty():
+        print("（这里没有终端可问 → 按拒绝处理）")
+        return False
     try:
         答 = input("执行吗？(y/N) ")
     except EOFError:
-        # web/、体检脚本里没有键盘 —— 问不到人，就当"没人点头"
-        print("（这里没有键盘可问 → 按拒绝处理）")
+        # 第二道保险：真终端被关掉、或 stdin 已经到头 —— 同样当"没人点头"
+        print("（键盘没了 → 按拒绝处理）")
         return False
     return 答.strip().lower() in ("y", "yes")
 
