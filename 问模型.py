@@ -50,22 +50,31 @@ def 列模型() -> dict:
 聊天地址 = 接口 + "/chat/completions"  # 注意不是 /models 了
 
 
-def 真问一次(问题: str) -> str:
-    """只负责"发一次、把答案掏出来"。不管重试。"""
-    钥匙 = 拿钥匙()
+def 发消息(本子: list[dict], 菜单: list[dict] | None = None) -> dict:
+    """把**一整本**消息发过去（可以带工具清单），返回 choices[0]。
+
+    跟 真问一次 的区别只有一个：真问一次只塞一条 user；
+    这里本子里有什么就发什么 —— system、user、assistant（带申请单）、tool 回音，一条不落。
+    第 7 课那句话在这儿：模型没有记性，它看到的永远只有这一本。
+
+    ⚠️ 这一只没套重试壳子。网络抽风就重跑；要套，照下面 问一句 那五步。
+    """
     请求头 = {
-        "Authorization": "Bearer " + 钥匙,
+        "Authorization": "Bearer " + 拿钥匙(),
         "Content-Type": "application/json",
     }
-    请求体 = {
-        "model": 模型名,
-        "messages": [
-            {"role": "user", "content": 问题},
-        ],
-    }
-    r = requests.post(聊天地址, headers=请求头, json=请求体, timeout=30)
+    请求体: dict = {"model": 模型名, "messages": 本子}
+    if 菜单:
+        请求体["tools"] = 菜单
+    r = requests.post(聊天地址, headers=请求头, json=请求体, timeout=60)
     r.raise_for_status()
-    return r.json()["choices"][0]["message"]["content"]
+    return r.json()["choices"][0]
+
+
+def 真问一次(问题: str) -> str:
+    """只负责"发一次、把答案掏出来"。不管重试。"""
+    选 = 发消息([{"role": "user", "content": 问题}])
+    return 选["message"]["content"]
 
 
 def 问一句(问题: str, 试几次: int = 3) -> str:
