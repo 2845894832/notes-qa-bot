@@ -1,0 +1,116 @@
+==================================================================
+幕一：一片一片走，每片之后看两个袋子
+==================================================================
+  ① 先看正文那一条支路（这是一批『单纯说话』的碎片）：
+     第 1 片  content=None     →  正文 ''
+     第 2 片  content=None     →  正文 ''
+     第 3 片  content='闭'      →  正文 '闭'
+     第 4 片  content='包'      →  正文 '闭包'
+     第 5 片  content='。'      →  正文 '闭包。'
+     ★ content 是 None 的片不加（那不是正文，是草稿）；是 '' 的加了也没变化。
+
+  ② 再看申请那一条支路（这批是『递申请』的回话，所以正文一直是空的 —— 它没说话）：
+  第 1 片  带来：什么也没有（草稿片 / 空片）
+          正文   ''   长度 0
+          申请们 （空的）
+
+  第 2 片  带来：什么也没有（草稿片 / 空片）
+          正文   ''   长度 0
+          申请们 （空的）
+
+  第 3 片  带来：申请单 1 张
+          正文   ''   长度 0
+          申请们 [0] id='call_a' 名='read_ledger' 参数=''
+          ↑ 柜子里第几次被碰：这一片是 1 张，每一张都先 setdefault 占位、再往里填
+
+  第 4 片  带来：申请单 1 张
+          正文   ''   长度 0
+          申请们 [0] id='call_a' 名='read_ledger' 参数=''  |  [1] id='call_b' 名='search_notes' 参数=''
+          ↑ 柜子里第几次被碰：这一片是 1 张，每一张都先 setdefault 占位、再往里填
+
+  第 5 片  带来：申请单 1 张
+          正文   ''   长度 0
+          申请们 [0] id='call_a' 名='read_ledger' 参数='{"mo'  |  [1] id='call_b' 名='search_notes' 参数=''
+          ↑ 柜子里第几次被碰：这一片是 1 张，每一张都先 setdefault 占位、再往里填
+
+  第 6 片  带来：申请单 1 张
+          正文   ''   长度 0
+          申请们 [0] id='call_a' 名='read_ledger' 参数='{"mo'  |  [1] id='call_b' 名='search_notes' 参数='{"qu'
+          ↑ 柜子里第几次被碰：这一片是 1 张，每一张都先 setdefault 占位、再往里填
+
+  第 7 片  带来：申请单 1 张
+          正文   ''   长度 0
+          申请们 [0] id='call_a' 名='read_ledger' 参数='{"month": "2026-09"}'  |  [1] id='call_b' 名='search_notes' 参数='{"qu'
+          ↑ 柜子里第几次被碰：这一片是 1 张，每一张都先 setdefault 占位、再往里填
+
+  第 8 片  带来：申请单 1 张
+          正文   ''   长度 0
+          申请们 [0] id='call_a' 名='read_ledger' 参数='{"month": "2026-09"}'  |  [1] id='call_b' 名='search_notes' 参数='{"query": "闭包"}'
+          ↑ 柜子里第几次被碰：这一片是 1 张，每一张都先 setdefault 占位、再往里填
+
+  幕一走完：
+    正文   ''
+    申请们 [0] id='call_a' 名='read_ledger' 参数='{"month": "2026-09"}'  |  [1] id='call_b' 名='search_notes' 参数='{"query": "闭包"}'
+
+==================================================================
+幕二：收尾那两行，各干一件事
+==================================================================
+  ① 消息 = {'role': 'assistant', 'content': 正文}
+     → {'role': 'assistant', 'content': ''}
+
+  ② if 申请们:  消息['tool_calls'] = [申请们[序] for 序 in sorted(申请们)]
+     为什么要 if：没有申请的时候，非流式那条消息里【根本没有 tool_calls 这个键】，
+     你要是硬塞一个空列表，键就对不上了 —— 比形状的时候会露。
+     为什么要 sorted：字典的键顺序 = 你第一次见到它的顺序。
+     这批碎片先来 0 再来 1，所以正好有序；要是模型先来 1 再来 0，
+     不 sorted 就会把申请单排成 1、0 —— 执行顺序和日志顺序都会乱。
+
+  最后拼出来的消息：
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call_a",
+          "type": "function",
+          "function": {
+            "name": "read_ledger",
+            "arguments": "{\"month\": \"2026-09\"}"
+          }
+        },
+        {
+          "id": "call_b",
+          "type": "function",
+          "function": {
+            "name": "search_notes",
+            "arguments": "{\"query\": \"闭包\"}"
+          }
+        }
+      ]
+    }
+
+==================================================================
+幕三：故意改坏一行，看坏在哪
+==================================================================
+  ✅ 正版       [0] id='call_a' 名='read_ledger' 参数='{"month": "2026-09"}'  |  [1] id='call_b' 名='search_notes' 参数='{"query": "闭包"}'
+     第 0 张 → id='call_a'  名字='read_ledger'  json.loads(参数) = {'month': '2026-09'}
+     第 1 张 → id='call_b'  名字='search_notes'  json.loads(参数) = {'query': '闭包'}
+
+  ❌ 每片覆盖     [0] id=None 名=None 参数='nth": "2026-09"}'  |  [1] id=None 名=None 参数='ery": "闭包"}'
+     第 0 张 → id=None  名字=None  json.loads(参数) = 【炸】JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+     第 1 张 → id=None  名字=None  json.loads(参数) = 【炸】JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+
+  ❌ 不判 id    [0] id=None 名='read_ledger' 参数='{"month": "2026-09"}'  |  [1] id=None 名='search_notes' 参数='{"query": "闭包"}'
+     第 0 张 → id=None  名字='read_ledger'  json.loads(参数) = {'month': '2026-09'}
+     第 1 张 → id=None  名字='search_notes'  json.loads(参数) = {'query': '闭包'}
+
+  ❌ 参数用 =    [0] id='call_a' 名='read_ledger' 参数='nth": "2026-09"}'  |  [1] id='call_b' 名='search_notes' 参数='ery": "闭包"}'
+     第 0 张 → id='call_a'  名字='read_ledger'  json.loads(参数) = 【炸】JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+     第 1 张 → id='call_b'  名字='search_notes'  json.loads(参数) = 【炸】JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+
+  ★ 四个版本跑完，只有第一个能交给主程序用：
+    · 每片覆盖：柜子里只剩最后一片，id 和名字全丢
+    · 不判 id  ：id 从 call_a 变成 None，主程序拿 None 去挂 tool_call_id
+    · 参数用 = ：参数只剩一个 '}'，json.loads 当场炸
+
+  这三行代码（setdefault 占位 / if 申.get('id') / +=）就是整段的命门。

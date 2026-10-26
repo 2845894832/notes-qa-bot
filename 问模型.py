@@ -11,6 +11,7 @@
 ⚠️ 这个文件里永远不出现 Key 本身，只出现 os.environ.get("DEEPSEEK_API_KEY")。
 """
 
+import json
 import os
 import time
 import requests
@@ -49,8 +50,40 @@ def 列模型() -> dict:
 模型名 = "deepseek-flash"  # 从刚才那张列表里挑的，便宜的那个
 聊天地址 = 接口 + "/chat/completions"  # 注意不是 /models 了
 
+def 拼碎片(碎片们: list[dict]) -> dict:
+    """把一串 delta 拼成一条 message（跟非流式拿到的那条形状一样）。
 
-def 发消息(本子: list[dict], 菜单: list[dict] | None = None) -> dict:
+    返回：{"role": "assistant", "content": "拼好的正文"}
+          有申请就再加一条 "tool_calls": [{"id":..., "type":"function",
+                                          "function": {"name":..., "arguments":...}}, ...]
+    """
+    正文 = ""
+    申请们: dict[int, dict] = {}
+    for 片 in 碎片们:
+        if 片.get("content") is not None:
+            正文 += 片["content"]
+        for 申 in 片.get("tool_calls") or []:
+            壳 = 申请们.setdefault(
+                申["index"],
+                {"id": "", "type": "function", "function": {"name": "", "arguments": ""}},
+            )
+            if 申.get("id"):
+                壳["id"] = 申["id"]
+            函数 = 申.get("function") or {}
+            if 函数.get("name"):
+                壳["function"]["name"] = 函数["name"]
+            壳["function"]["arguments"] += 函数.get("arguments") or ""
+    消息 = {"role": "assistant", "content": 正文}
+    if 申请们:
+        消息["tool_calls"] = [申请们[序] for 序 in sorted(申请们)]
+    return 消息
+def 发消息(
+    本子: list[dict],
+    菜单: list[dict] | None = None,
+    流式: bool = False,
+    打印=None,
+    计时: dict | None = None,
+) -> dict:
     """把**一整本**消息发过去（可以带工具清单），返回 choices[0]。
 
     跟 真问一次 的区别只有一个：真问一次只塞一条 user；
@@ -58,6 +91,11 @@ def 发消息(本子: list[dict], 菜单: list[dict] | None = None) -> dict:
     第 7 课那句话在这儿：模型没有记性，它看到的永远只有这一本。
 
     ⚠️ 这一只没套重试壳子。网络抽风就重跑；要套，照下面 问一句 那五步。
+
+    ── 第 12 课加的两个开关（都有默认值，外面三个调用点一个字不用改）──
+    流式=True   : 正文边收边打，**返回的形状跟非流式一模一样**（{"message":…, "finish_reason":…}）
+    打印=某个函数: 流式时每来一段正文就调它一次。不传 = 不打到屏幕上
+    计时=某个dict : 传了就往里写 {"首包": 秒, "首字": 秒}，给记录仪用
     """
     请求头 = {
         "Authorization": "Bearer " + 拿钥匙(),
@@ -66,9 +104,65 @@ def 发消息(本子: list[dict], 菜单: list[dict] | None = None) -> dict:
     请求体: dict = {"model": 模型名, "messages": 本子}
     if 菜单:
         请求体["tools"] = 菜单
-    r = requests.post(聊天地址, headers=请求头, json=请求体, timeout=60)
+
+    if not 流式:
+        r = requests.post(聊天地址, headers=请求头, json=请求体, timeout=60)
+        r.raise_for_status()
+        return r.json()["choices"][0]
+
+    # ══════════════ 流式分支（第 12 课）· TODO 流式 ① ══════════════
+    # 做完返回的东西，必须跟上面那句 return 长得一模一样：
+    #   {"message": 拼好的那条, "finish_reason": 最后一次看到的值}
+    #
+    #   ① 先跟服务器说"要流"：请求体["stream"] = True
+    #      再给 requests.post 加一个 stream=True（两个都要，少一个都不流）
+    #   ② 准备好四样：开始 = time.time() / 首包 = 首字 = None
+    #                  碎片们 = [] / 最后原因 = None
+    #   ③ for 行 in r.iter_lines(decode_unicode=True):
+    #         空行 或 不是 "data: " 开头 → continue
+    #         正文行 == "[DONE]" → break
+    #         整片 = json.loads(正文行)["choices"][0]
+    #         片   = 整片.get("delta") or {}
+    #         碎片们.append(片)
+    #         首包：`if 首包 is None` 才记 time.time() - 开始
+    #         最后原因 = 整片.get("finish_reason") or 最后原因
+    #         段 = 片.get("content")；有正文就：首字 第一次记下，然后 `if 打印: 打印(段)`
+    #   ④ 计时 不是 None 就 计时["首包"] = 首包 / 计时["首字"] = 首字
+    #      return {"message": 拼碎片(碎片们), "finish_reason": 最后原因}
+    #
+    # ⚠️ 拼碎片 就是你自己在 _流式练习.py 里写的那只 ——
+    #    整个函数复制到本文件里（放在 发消息 上面），一行都不用改。
+    # ═══════════════════════════════════════════════════════════════
+    请求体 ["stream"] = True
+    r = requests.post(聊天地址, headers=请求头, json=请求体, stream=True, timeout=60)
     r.raise_for_status()
-    return r.json()["choices"][0]
+
+    开始 = time.time()
+    首包 = 首字 = None
+    碎片们: list[dict] = [] 
+    最后原因 = None
+    for 行 in r.iter_lines(decode_unicode=True):
+        if not 行 or not 行.startswith("data: "):
+            continue
+        正文行 = 行[len("data: "):]
+        if 正文行 == "[DONE]":
+            break
+        整片 = json.loads(正文行)["choices"][0]
+        片 = 整片.get("delta") or {}
+        碎片们.append(片)
+        if 首包 is None:
+            首包 = time.time() - 开始
+        最后原因 = 整片.get("finish_reason") or 最后原因
+        段 = 片.get("content")
+        if 段:
+            if 首字 is None:
+                首字 = time.time() - 开始
+            if 打印:
+                打印(段)
+    if 计时 is not None:
+        计时["首包"] = 首包
+        计时["首字"] = 首字
+    return {"message": 拼碎片(碎片们), "finish_reason": 最后原因}
 
 
 def 真问一次(问题: str) -> str:

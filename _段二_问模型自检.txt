@@ -1,0 +1,13 @@
+普通问答：
+  拼回正文 = '变量是程序中用来存储数据、并且其值可以改变的名称或容器。'
+  屏幕收到  = '变量是程序中用来存储数据、并且其值可以改变的名称或容器。'
+  两者一样？ True
+  finish_reason = stop
+  计时 = {'首包': 0.06587076187133789, '首字': 1.0705151557922363}
+  键 = ['finish_reason', 'message']  / message 键 = ['content', 'role']
+
+要伸手的问答：
+  finish_reason = tool_calls
+  申请们 = [{"id": "call_00_4CQ8rFVD8gDX9cSoXKM03965", "type": "function", "function": {"name": "search_notes", "arguments": "{\"query\": \"闭包\"}"}}]
+  参数能 loads 吗 = {'query': '闭包'}
+  计时 = {'首包': 0.01652383804321289, '首字': None}

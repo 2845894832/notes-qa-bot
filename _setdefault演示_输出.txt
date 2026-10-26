@@ -1,0 +1,44 @@
+==========================================================
+幕一：没有它的时候，得写三行
+==========================================================
+  三行版  → {'甲': [90, 95], '乙': [80]}
+  setdefault 版 → {'甲': [90, 95], '乙': [80]}
+
+  注意它**有返回值**：返回的就是格子里现在那个盒子，所以能直接 .append(分)。
+
+==========================================================
+幕二：跟 .get() 差在哪 —— 柜子里到底有没有多东西
+==========================================================
+  一开始         格子 = {'甲': ['第一次']}
+  .get('乙')     → None          ← 给你 None（假的）
+  取完再看       格子 = {'甲': ['第一次']}   ← 乙没进去
+
+  .setdefault('乙', []) → []
+  取完再看       格子 = {'甲': ['第一次'], '乙': []}   ← 乙进去了
+
+  格子不空的时候，默认值没用，返回的是原来那个：
+  .setdefault('甲', ['全新的']) → ['第一次']
+  甲还是原来的：{'甲': ['第一次']}
+
+==========================================================
+幕三：第 12 课就是用它 —— 碎片按 index 归队
+==========================================================
+  收到 index=0 的片 → 柜子里现在是这样：
+    {"0": {"id": "call_a", "type": "function", "function": {"name": "read_ledger", "arguments": ""}}}
+  收到 index=1 的片 → 柜子里现在是这样：
+    {"0": {"id": "call_a", "type": "function", "function": {"name": "read_ledger", "arguments": ""}}, "1": {"id": "call_b", "type": "function", "function": {"name": "search_notes", "arguments": ""}}}
+  收到 index=0 的片 → 柜子里现在是这样：
+    {"0": {"id": "call_a", "type": "function", "function": {"name": "read_ledger", "arguments": "{\"mo"}}, "1": {"id": "call_b", "type": "function", "function": {"name": "search_notes", "arguments": ""}}}
+  收到 index=1 的片 → 柜子里现在是这样：
+    {"0": {"id": "call_a", "type": "function", "function": {"name": "read_ledger", "arguments": "{\"mo"}}, "1": {"id": "call_b", "type": "function", "function": {"name": "search_notes", "arguments": "{\"qu"}}}
+  收到 index=0 的片 → 柜子里现在是这样：
+    {"0": {"id": "call_a", "type": "function", "function": {"name": "read_ledger", "arguments": "{\"month\": \"2026-09\"}"}}, "1": {"id": "call_b", "type": "function", "function": {"name": "search_notes", "arguments": "{\"qu"}}}
+  收到 index=1 的片 → 柜子里现在是这样：
+    {"0": {"id": "call_a", "type": "function", "function": {"name": "read_ledger", "arguments": "{\"month\": \"2026-09\"}"}}, "1": {"id": "call_b", "type": "function", "function": {"name": "search_notes", "arguments": "{\"query\": \"闭包\"}"}}}
+
+  ★ 没有 setdefault，就得先写 `if 序 not in 申请们:` 三行去占位。
+    有它，一行就够，而且**返回的壳一定能往里写** —— 这就是它存在的理由。
+
+  ⚠️ 一个坑：第二个参数是**每次都先算出来**的，不是'需要了才算'。
+     这里是个字典字面量，无所谓；要是那一下很贵（比如查一次数据库），
+     就先 if 判断再算，别指望它偷懒。
