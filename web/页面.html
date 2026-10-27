@@ -44,32 +44,42 @@
   const 问按钮 = document.getElementById("问按钮");
   const 答案区 = document.getElementById("答案区");
 
-  // 点「问」按钮时干这些事。
+  // ─────────────────────────────────────────────────────────────
+  // 🆕 第 13 课 · TODO ③：把 fetch 换成 EventSource（边收边打）
+  //
+  //   下面这段 async/await 是老的「整箱到货」写法 —— 保留着当对照。
+  //   做完 服务.py 的 /问流 之后，把 问按钮.onclick 换成：
+  //
+  //     问按钮.onclick = () => {
+  //       答案区.textContent = "";
+  //       const 源 = new EventSource("/问流?问题=" + encodeURIComponent(问题框.value));
+  //
+  //       源.onmessage = (事件) => {
+  //         if (事件.data === "[DONE]") { 源.close(); return; }   // 关闸
+  //         答案区.textContent += JSON.parse(事件.data).字;
+  //       };
+  //
+  //       源.onerror = () => { 源.close(); };
+  //     };
+  //
+  //   ⚠️ 标点全用英文半角
+  //   ⚠️ [DONE] 一定要 源.close() —— 不关它过一会儿会自动重连，同一个问题再问一遍
+  //   ⚠️ EventSource 只能发 GET，所以问题塞在网址后面（encodeURIComponent 管中文）
+  // ─────────────────────────────────────────────────────────────
+
+  // 点「问」按钮时干这些事（老写法，先别删：留着对照）。
   // async / await 理解成「等它回来」：发请求要花时间，await = 在这一行等。
-  问按钮.onclick = async () => {
-    答案区.textContent = "想…";
+    问按钮.onclick = () => {
+      答案区.textContent = "";
+      const 源 = new EventSource("/问流?问题=" + encodeURIComponent(问题框.value));
 
-    // ① 把问题发给 /问 这个柜台
-    const 响应 = await fetch("/问", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ 问题: 问题框.value }),   // .value 才是框里打的字
-    });
+      源.onmessage = (事件) => {
+        if (事件.data === "[DONE]") { 源.close(); return; }   // 关闸
+        答案区.textContent += JSON.parse(事件.data).字;
+      };
 
-    // ② 先看门口那块牌子，再看内容。
-    //    响应.ok：成功 true，出事 false。
-    //    出错的单子长这样 {"detail": "..."} —— 那串字就是服务端 raise 时写的原话
-    //    （注意：门卫拦下的 422，detail 是一**摞**纸条，不是一个字符串）
-    if (响应.ok === false) {
-      答案区.textContent = "出事了：" + (await 响应.json()).detail;
-      return;                                        // 出事了就别再往下掏「答案」
-    }
-
-    // ③ 把回答掏出来，显示到页面上
-    const 数据 = await 响应.json();
-    答案区.textContent = 数据.答案;
-
-  };
+      源.onerror = () => { 源.close(); };
+    };
 </script>
 </body>
 </html>

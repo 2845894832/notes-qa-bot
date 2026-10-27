@@ -21,11 +21,13 @@
 换引擎、不换方向盘，才能用同一把尺子证明"里面换了、外面没坏"。
 """
 
+import atexit
 import json
 import os
 import re
 import shutil
 import sqlite3
+import subprocess
 import sys
 import time
 from datetime import datetime
@@ -141,6 +143,107 @@ def 记一笔(amount: float, category: str, date: str, note: str = "") -> str:
         连接.close()
 
 
+# ================================================================ 隔壁（第 15 课）
+# 账本那两只手（read_ledger / add_expense）从这一课起住在**另一个进程**里：
+# _MCP服务器.py。查笔记那只手（search_notes）还留在本地 —— 它要 import 检索、要 当前块们。
+#
+# 菜单一个字不改：模型眼里还是三只手，它不知道谁在哪儿执行。
+# 变的只有 执行申请() 里那一行：名字在隔壁 → 去隔壁下单。
+隔壁: dict = {}          # {工具名: 那个服务器的进程}；起不来就是空的
+_编号 = [0]
+
+
+def 取号() -> int:
+    _编号[0] += 1
+    return _编号[0]
+
+
+def 发(进程, 消息):
+    """一行一条 JSON-RPC（第 14 课那个，原样搬来；这里不打印，免得刷屏）。"""
+    进程.stdin.write(json.dumps(消息, ensure_ascii=False) + "\n")
+    进程.stdin.flush()
+    if "id" not in 消息:
+        return None
+    行 = 进程.stdout.readline()
+    if not 行:
+        return None
+    return json.loads(行)
+
+
+def 起隔壁() -> dict:
+    """把 _MCP服务器.py 拉起来，握手 + 要菜单，把账本那两只手记进 隔壁。
+
+    已经起过就直接返回（这个函数可能被问很多次，只会起一个进程）。
+
+    ① 环境 = dict(os.environ)
+       环境["PYTHONIOENCODING"] = "utf-8"      ← 两头说一种话
+       环境["账本路径"] = 账本路径              ← 告诉它去开哪个柜子（我的账本.db）
+    ② 进程 = subprocess.Popen(
+           [sys.executable, os.path.join(这里, "_MCP服务器.py")],
+           stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+           text=True, encoding="utf-8", bufsize=1, env=环境)
+    ③ 发 initialize（id 用 取号()）→ 发 {"jsonrpc":"2.0","method":"notifications/initialized"}
+       → 发 tools/list（id 用 取号()）
+    ④ 工具们 = 回话["result"]["tools"]
+       想搬的那两只 = {"read_ledger", "add_expense"}
+       为 t in 工具们: if t["name"] in 想搬的那两只: 隔壁[t["name"]] = 进程
+       （search_notes 不在服务器上，收不进来 —— 它就在本地）
+    ⑤ return 隔壁
+    """
+    环境 = dict(os.environ)
+    环境["PYTHONIOENCODING"] = "utf-8"
+    环境["账本路径"] = 账本路径
+
+    进程 =  subprocess.Popen(
+           [sys.executable, os.path.join(这里, "_MCP服务器.py")],
+           stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+           text=True, encoding="utf-8", bufsize=1, env=环境)
+
+    发(进程, {"jsonrpc": "2.0", "id": 取号(), "method": "initialize",
+                "params": {"protocolVersion": "2025-06-18", "capabilities": {},
+                           "clientInfo": {"name": "问答机器人", "version": "1.0"}}})
+    发(进程, {"jsonrpc": "2.0", "method": "notifications/initialized"})   
+    回话 = 发(进程, {"jsonrpc": "2.0", "id": 取号(), "method": "tools/list"})
+    工具们 = 回话["result"]["tools"]
+    想搬的那两只 = {"read_ledger", "add_expense"}
+
+    for t in 工具们:
+        if t["name"] in 想搬的那两只:
+            隔壁[t["name"]] = 进程
+    if 隔壁:
+        return 隔壁 
+
+def 下单(进程, 名字: str, 参数: dict) -> tuple[str, bool]:
+    """跟隔壁说一句 tools/call，把回话变成 (文字, 是否失败)。
+
+    print 那一行是给你数的：【隔壁】出现几次 = 有几只工具真的跑在别的进程里。
+    """
+    print(f"    【隔壁】{名字}", flush=True)
+    回话 = 发(进程, {
+        "jsonrpc": "2.0", "id": 取号(), "method": "tools/call",
+        "params": {"name": 名字, "arguments": 参数},
+    })
+    if not 回话:
+        return "【隔壁没了】服务器没回话，这次没查成。", True
+    结果 = 回话.get("result") or {}
+    文字 = (结果.get("content") or [{}])[0].get("text", "")
+    return 文字, 结果.get("isError", False)
+
+
+def 收工() -> None:
+    """程序退出时把隔壁那位关了 —— 不留僵尸进程。"""
+    for 进程 in set(隔壁.values()):
+        try:
+            进程.terminate()
+            进程.wait(timeout=5)
+        except Exception:
+            pass
+    隔壁.clear()
+
+
+atexit.register(收工)
+
+
 # ================================================================ 闸门
 # 会改东西的工具，全在这里点名。漏一个 = 世界已经变了，但没人问过你。
 写工具 = {"add_expense"}
@@ -183,6 +286,22 @@ def 执行申请(申请: dict) -> tuple[str, bool]:
     #    公共网页上任何人问它记账，都写不进你的账本。这是默认值该有的样子。
     if 名字 in 写工具 and not 请求确认(名字,参数):
         return "用户拒绝了这次写入，账本一个字没改。不要重试，先把情况说清楚。", False
+
+    # 🆕 第 15 课 · TODO ② —— 手在隔壁，就去隔壁下单。就这几行：
+    #
+    #   if 名字 in 隔壁:
+    #       文字, 失败 = 下单(隔壁[名字], 名字, 参数)
+    #       return (f"【工具报错】{文字}" if 失败 else 文字), 失败
+    #
+    # 然后下面原来那行 `return str(工具表[名字](**参数)), False` **一个字不用改** ——
+    # 名字不在隔壁（search_notes）自然就走到它。
+    #
+    # ⚠️ 闸门在上面那三行，**不动也不挪**：点头的人在本地，所以判在本地、单在隔壁下。
+    #    写手搬走了，闸门不能跟着搬 —— 否则隔壁没人可问，等于把闸门拆了。
+    # ⚠️ 失败也要带文字回来（isError=True），加上【工具报错】前缀跟本地那条路说法一致。
+    if 名字 in 隔壁:
+        文字, 失败 = 下单(隔壁[名字], 名字, 参数)
+        return (f"【工具报错】{文字}" if 失败 else 文字), 失败
     try:
         return str(工具表[名字](**参数)), False
     except Exception as 错:
@@ -280,6 +399,7 @@ def 回答一个问题(
     最多几轮: int = 5,
     允许确认: bool = False,
     流式: bool = False,
+    打印=None
 ) -> str:
     """跑完一整轮 Agent，返回它最后说的那句话（字符串，拒答时含 [[无答案]]）。
 
@@ -298,6 +418,13 @@ def 回答一个问题(
     当前块们 = 块们
     当前允许确认 = 允许确认
     准备好账本()
+
+    # 第 15 课（给你了，不用改）：把隔壁叫起来。起过就直接返回。
+    # 起不来也不许崩 —— 隔壁是空的，那几只手就自动退回本地（TODO ② 那个 if 说了算）。
+    try:
+        起隔壁()
+    except Exception as 错:
+        print(f"（隔壁没起来：{type(错).__name__}: {错} —— 账本那两只手退回本地）", flush=True)
 
     # ══════════════ 记录仪（第 11 课）· TODO A ══════════════
     # 这一问的开始时间 + 三个计数器（全从 0 起）
@@ -318,9 +445,25 @@ def 回答一个问题(
     # 为什么不能直接 print(段)：
     #   拒答时模型吐的就是 [[无答案]] 这 8 个字，边吐边打 → 屏幕上露出机器话。
     #   所以开头先押着：marker 一共 7 个字（len("[[无答案]]") == 7），攒到第 8 个才往外放。
+    # ══════════════ 第 13 课 · TODO ①（SSE 要先过这一关）══════════════
+    # 现在这个函数只会往**终端**打。网页要的是"每来一段就交给我"，所以：
+    #   把「出口」从写死的 print 变成一个**参数** —— 跟第 12 课在 问模型 里做的一模一样，
+    #   只是这次往上挪了一层。
+    #
+    #   ① 函数签名加一个：        打印=None,
+    #   ② 在 def 打印一段 前面加：  出口 = 打印 or (lambda 字: print(字, end="", flush=True))
+    #   ③ 打印一段 里最后那句      print(押着["文"], end="", flush=True)  →  出口(押着["文"])
+    #   ④ 收尾那两处              print(..., end="")  →  出口(...)
+    #      （"[[无答案]]" 那句、照原样打那句，两处都要改）
+    #
+    #   ⚠️ 默认值 打印=None = 老行为：外面三个调用点（命令行 / 主程序() / _端到端体检.py）
+    #      一个字都不用改 —— 这就是"加开关"的写法。
+    #   ⚠️ 问模型.发消息 那一句不用改：它拿到的还是 打印一段。
+    # ═══════════════════════════════════════════════════════════════════
+
     计时: dict = {}                 # 问模型 会往里写 {"首包": 秒, "首字": 秒}
     押着 = {"文": ""}                # 还没放出去的那几个字
-
+    出口 = 打印 or (lambda 字: print(字, end="", flush=True))
     def 打印一段(段: str) -> None:
         #  ① 押着["文"] += 段
         #  ② if len(押着["文"]) <= len("[[无答案]]"):  return     ← 不超过 7 个就先不打
@@ -330,7 +473,7 @@ def 回答一个问题(
         押着["文"] += 段
         if len(押着["文"]) <= len("[[无答案]]"):
             return
-        print(押着["文"], end="", flush=True)
+        出口(押着["文"])
         押着["文"] = ""
     # ═══════════════════════════════════════════════════════════
 
@@ -450,9 +593,9 @@ def 回答一个问题(
         #   ② 最后 print() 收个尾 —— 流式吐出来的字没有换行结尾
         if 押着["文"]:
             if 押着["文"] == "[[无答案]]":
-                print("笔记里没有相关内容。", end="")
+                出口("笔记里没有相关内容。")
             else:
-                print(押着["文"], end="")
+                出口(押着["文"])
         print()
     else:
         print(最后.replace("[[无答案]]", "笔记里没有相关内容。"))
@@ -475,6 +618,7 @@ def 主程序() -> None:
 if __name__ == "__main__":
     # 命令行入口：带问题就答这一个，不带就进交互模式。
     if len(sys.argv) > 1:
-        回答一个问题(" ".join(sys.argv[1:]), 检索.可用块(), 流式=True)
+        # 第 15 课补：这里也是真人坐在终端前，跟交互模式一样要能点头
+        回答一个问题(" ".join(sys.argv[1:]), 检索.可用块(), 流式=True, 允许确认=True)
     else:
         主程序()
